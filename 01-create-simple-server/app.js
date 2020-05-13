@@ -27,7 +27,7 @@ const server = http.createServer((req, res) => {
     // after all chunks of data received
     return req.on('end', () => {
       const parsedBody = Buffer.concat(body).toString();
-      const message = parsedBody.split('=')[1]; // message=novy+text+na+zkousku
+      const message = parsedBody.split('=')[0]; // message=novy+text+na+zkousku
       // fs.writeFileSync('message.txt', message); // synchronous, blocks execution of the code below until this file is created and written into
       fs.writeFile('message.txt', message, (err) => {
         // callback executes after message.txt is created

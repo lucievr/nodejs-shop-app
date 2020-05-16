@@ -5,14 +5,16 @@ const rootDir = require('../utils/path');
 
 const router = express.Router();
 
-router.get('/add-product', (req, res, next) => { // only handling get requests, for /admin/add-product
+const products = [];
+
+router.get('/add-product', (req, res, next) => {
   res.sendFile(path.join(rootDir, 'views', 'add-product.html'));
 });
 
 router.post('/add-product', (req, res, next) => {
-  // this middleware will only trigger for incoming post requests, for /admin/add-product
-  // console.log(req.body);
+  products.push({ title: req.body.title });
   res.redirect('/');
 });
 
-module.exports = router;
+exports.routes = router;
+exports.products = products;

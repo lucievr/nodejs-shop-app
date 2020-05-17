@@ -8,7 +8,7 @@ const p = path.join(
 );
 
 const getProductsFromFile = (callback) => {
-  fs.readFile(p, (err, fileContent) => {
+  fs.readFile(p, (err, fileContent) => { // when reading the file at p path location we either get an error or the data
     if (err) {
       return callback([]);
     }
@@ -17,8 +17,11 @@ const getProductsFromFile = (callback) => {
 };
 
 module.exports = class Product {
-  constructor(title) {
+  constructor(title, imageUrl, description, price) {
     this.title = title;
+    this.imageUrl = imageUrl;
+    this.description = description;
+    this.price = price;
   }
 
   save() {
@@ -30,7 +33,7 @@ module.exports = class Product {
     });
   }
 
-  static fetchAll(callback) {
+  static fetchAll(callback) { // callback as an argument, callback will be executed once fetchAll is done
     // static ensures this method can be called directly on the object itself, not just instantiated object
     getProductsFromFile(callback);
   }

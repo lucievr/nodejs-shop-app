@@ -9,6 +9,8 @@ const errorController = require('./controllers/error');
 const sequelize = require('./utils/database');
 const Product = require('./models/product');
 const User = require('./models/user');
+const Cart = require('./models/cart');
+const CartItem = require('./models/cart-item');
 
 const app = express();
 
@@ -39,6 +41,13 @@ app.use(errorController.get404);
 Product.belongsTo(User, { constraints: true, onDelete: 'CASCADE' }); // cascade: if user deleted product also deleted
 User.hasMany(Product); // user can create many products
 
+Cart.belongsTo(User); // => sequelize will add a new field to the cart with userId
+User.hasOne(Cart); // duplicate, we can define just belongs or has relationship...
+
+// many to many relationship
+Cart.belongsToMany(Product, { through: CartItem }); // CartItem table as intermediary used to join Cart and Product
+Product.belongsToMany(Cart, { through: CartItem });
+
 // syncs our models with the database by creating the appropriate tables
 sequelize
   // .sync({force: true}) - used for recreating the table, e.g. when we added associations, do not use in prod!!!
@@ -55,6 +64,9 @@ sequelize
   })
   .then((user) => {
     // console.log(user);
+    return user.createCart();
+  })
+  .then((cart) => {
     app.listen(3000);
   })
   .catch((err) => console.log(err));

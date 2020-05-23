@@ -68,6 +68,53 @@ class User {
       });
   }
 
+  deleteItemFromCart(productId) {
+    const updatedCartItems = this.cart.items.filter((item) => {
+      return item.productId.toString() !== productId.toString();
+    });
+
+    const db = getDb();
+    return db
+      .collection('users')
+      .updateOne(
+        { _id: new ObjectId(this._id) },
+        { $set: { cart: { items: updatedCartItems } } }
+      );
+  }
+
+  addOrder() {
+    const db = getDb();
+    return this.getCart()
+      .then((products) => {
+        // call getCart to get list of products with all the fields that are not stored in users.cart
+        const order = {
+          items: products,
+          user: {
+            _id: new ObjectId(this._id),
+            name: this.name,
+          },
+        };
+        return db.collection('orders').insertOne(order);
+      })
+      .then((result) => {
+        this.cart = { items: [] };
+        return db.collection('users').updateOne(
+          { _id: new ObjectId(this._id) },
+          { $set: { cart: { items: [] } } } // empty the cart stored in users
+        );
+      })
+      .catch((err) => console.log(err));
+  }
+
+  getOrders() {
+    const db = getDb();
+    // user._id in quotes to specify the path of a nested object
+    return db
+      .collection('orders')
+      .find({ 'user._id': new ObjectId(this._id) })
+      .toArray();
+  }
+
   static findById(userId) {
     const db = getDb();
     return db

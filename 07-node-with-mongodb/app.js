@@ -20,7 +20,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use((req, res, next) => {
   User.findById('5ec98401941cfb58febb7781')
     .then((user) => {
-      req.user = user; // store user retrieved from db in our request
+      req.user = new User(user.name, user.email, user.cart, user._id); // create new User with user data from db
       next(); // to continue to the next middleware
     })
     .catch((err) => {

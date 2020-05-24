@@ -6,6 +6,7 @@ const session = require('express-session');
 // result of this function call with passed session object as an argument is stored in this const
 const MongoDbStore = require('connect-mongodb-session')(session);
 const csrf = require('csurf');
+const flash = require('connect-flash');
 
 require('dotenv').config();
 
@@ -42,6 +43,7 @@ app.use(
   })
 );
 app.use(csrfProtection); // must be used after we initialise the session, csurf is using that session
+app.use(flash()); // also after session initialised
 
 app.use((req, res, next) => {
   if (!req.session.user) {

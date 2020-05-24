@@ -35,7 +35,6 @@ exports.getIndex = (req, res, next) => {
         prods: products,
         docTitle: 'My Shop',
         path: '/',
-        isAuthenticated: req.session.isLoggedIn,
       });
     })
     .catch((err) => console.log(err));
@@ -91,7 +90,7 @@ exports.postOrder = (req, res, next) => {
       });
       const order = new Order({
         user: {
-          name: req.user.name,
+          email: req.user.email,
           userId: req.user, // can use the entire object and mongoose will pick the id from it
         },
         products: products,

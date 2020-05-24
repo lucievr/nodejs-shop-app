@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const session = require('express-session');
 // result of this function call with passed session object as an argument is stored in this const
 const MongoDbStore = require('connect-mongodb-session')(session);
+const csrf = require('csurf');
 
 require('dotenv').config();
 
@@ -23,6 +24,8 @@ const store = new MongoDbStore({
   collection: 'sessions',
 });
 
+const csrfProtection = csrf(); // created middleware for csrf protection using csurf package
+
 app.set('view engine', 'ejs');
 app.set('views', 'views');
 
@@ -38,6 +41,7 @@ app.use(
     store: store,
   })
 );
+app.use(csrfProtection); // must be used after we initialise the session, csurf is using that session
 
 app.use((req, res, next) => {
   if (!req.session.user) {
@@ -49,6 +53,13 @@ app.use((req, res, next) => {
       next();
     })
     .catch((err) => console.log(err));
+});
+
+app.use((req, res, next) => {
+  // for every request that is executed, these 2 fields will be set for the views that are rendered
+  res.locals.isAuthenticated = req.session.isLoggedIn;
+  res.locals.csrfToken = req.csrfToken(); // method provided by the csrf middleware
+  next();
 });
 
 app.use('/admin', adminRoutes);

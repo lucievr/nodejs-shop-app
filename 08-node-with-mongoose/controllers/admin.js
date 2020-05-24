@@ -18,6 +18,7 @@ exports.postAddProduct = (req, res, next) => {
     price: price,
     description: description,
     imageUrl: imageUrl,
+    userId: req.user,
   });
   product
     .save() // mongoose save method, not defined by us
@@ -73,6 +74,8 @@ exports.postEditProduct = (req, res, next) => {
 
 exports.getProducts = (req, res, next) => {
   Product.find()
+    // .select('title price -_id') // filter which data to fetch, only title & price and exclude id
+    // .populate('userId') // allows us to fetch data from the User model as referenced in userId field of Product model
     .then((products) => {
       res.render('admin/products', {
         prods: products,

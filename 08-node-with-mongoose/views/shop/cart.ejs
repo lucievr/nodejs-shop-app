@@ -8,9 +8,10 @@
                 <ul>
                     <% products.forEach(prod => { %>
                         <li>
-                            <p><%= prod.title %> (<%= prod.quantity %>)</p>
+                            <!-- in user schema product title is nested inside productId -->
+                            <p><%= prod.productId.title %> (<%= prod.quantity %>)</p>
                             <form action="/cart-delete-item" method="POST">
-                                <input type="hidden" name="productId" value="<%= prod._id %>">
+                                <input type="hidden" name="productId" value="<%= prod.productId._id %>">
                                 <button class="btn" type="submit">Delete</button>
                             </form>
                         </li>

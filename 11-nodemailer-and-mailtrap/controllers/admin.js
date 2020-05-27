@@ -59,21 +59,26 @@ exports.postEditProduct = (req, res, next) => {
 
   Product.findById(prodId)
     .then((product) => {
+      if (product.userId.toString() !== req.user._id.toString()) {
+        return res.redirect('/'); // if product not created by logged in user, redirect to home
+      }
       product.title = updatedTitle;
       product.price = updatedPrice;
       product.description = updatedDescription;
       product.imageUrl = updatedImageUrl;
-      return product.save();
-    })
-    .then((result) => {
-      console.log('Updated product');
-      res.redirect('/admin/products');
+      return product
+        .save()
+        .then((result) => {
+          console.log('Updated product');
+          res.redirect('/admin/products');
+        })
+        .catch((err) => console.log(err));
     })
     .catch((err) => console.log(err));
 };
 
 exports.getProducts = (req, res, next) => {
-  Product.find()
+  Product.find({ userId: req.user._id }) // only show products created by the same user as currently logged in (user stored in req thanks to the middlware func in app.js)
     // .select('title price -_id') // filter which data to fetch, only title & price and exclude id
     // .populate('userId') // allows us to fetch data from the User model as referenced in userId field of Product model
     .then((products) => {
@@ -88,7 +93,7 @@ exports.getProducts = (req, res, next) => {
 
 exports.postDeleteProduct = (req, res, next) => {
   const prodId = req.body.productId;
-  Product.findByIdAndDelete(prodId)
+  Product.deleteOne({ _id: prodId, userId: req.user._id }) // only delete if projId matches and if creater same as logged in user
     .then(() => {
       res.redirect('/admin/products');
     })

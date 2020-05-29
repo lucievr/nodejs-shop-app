@@ -2,6 +2,7 @@ const express = require('express');
 const { check } = require('express-validator/check');
 
 const authController = require('../controllers/auth');
+const User = require('../models/user');
 
 const router = express.Router();
 
@@ -15,7 +16,18 @@ router.post(
   '/signup',
   [
     // or use body insted of check to only check req.body
-    check('email').isEmail().withMessage('Please enter a valid email.'), // msg relates to check immediately before withMessage()
+    check('email')
+      .isEmail()
+      .withMessage('Please enter a valid email.') // msg relates to check immediately before withMessage()
+      .custom((value, { req }) => { // custom async validation, if it throws an error or returns a promise rejection it will not pass the validation
+        return User.findOne({ email: value }).then((userDoc) => {
+          if (userDoc) {
+            return Promise.reject(
+              'A user with this email address already exists.'
+            );
+          }
+        });
+      }),
     check(
       'password',
       // this error message relates to all checks in the validator

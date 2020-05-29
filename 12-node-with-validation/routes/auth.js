@@ -1,5 +1,5 @@
 const express = require('express');
-const { check } = require('express-validator/check');
+const { check, body } = require('express-validator');
 
 const authController = require('../controllers/auth');
 const User = require('../models/user');
@@ -8,7 +8,20 @@ const router = express.Router();
 
 router.get('/login', authController.getLogin);
 
-router.post('/login', authController.postLogin);
+router.post(
+  '/login',
+  [
+    body('email')
+      .isEmail()
+      .withMessage('Please enter a valid email address.')
+      .normalizeEmail(),
+    body('password', 'Password has to be valid.')
+      .isLength({ min: 5 })
+      .isAlphanumeric()
+      .trim(),
+  ],
+  authController.postLogin
+);
 
 router.get('/signup', authController.getSignup);
 
@@ -19,7 +32,8 @@ router.post(
     check('email')
       .isEmail()
       .withMessage('Please enter a valid email.') // msg relates to check immediately before withMessage()
-      .custom((value, { req }) => { // custom async validation, if it throws an error or returns a promise rejection it will not pass the validation
+      .custom((value, { req }) => {
+        // custom async validation, if it throws an error or returns a promise rejection it will not pass the validation
         return User.findOne({ email: value }).then((userDoc) => {
           if (userDoc) {
             return Promise.reject(
@@ -27,20 +41,24 @@ router.post(
             );
           }
         });
-      }),
-    check(
+      })
+      .normalizeEmail(),
+    body(
       'password',
       // this error message relates to all checks in the validator
       'Please enter a password with only numbers and letters and at least 5 characters long'
     )
       .isLength({ min: 5 })
-      .isAlphanumeric(),
-    check('confirmPassword').custom((value, { req }) => {
-      if (value !== req.body.password) {
-        throw new Error('Passwords have to match!');
-      }
-      return true;
-    }),
+      .isAlphanumeric()
+      .trim(),
+    body('confirmPassword')
+      .trim()
+      .custom((value, { req }) => {
+        if (value !== req.body.password) {
+          throw new Error('Passwords have to match!');
+        }
+        return true;
+      }),
   ],
   authController.postSignup
 );

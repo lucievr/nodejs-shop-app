@@ -2,7 +2,7 @@ const crypto = require('crypto'); // built-in node library
 
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
-const { validationResult } = require('express-validator/check');
+const { validationResult } = require('express-validator');
 
 const User = require('../models/user');
 
@@ -27,6 +27,11 @@ exports.getLogin = (req, res, next) => {
     docTitle: 'Login',
     path: '/login',
     errorMessage: message,
+    oldInput: {
+      email: '',
+      password: '',
+    },
+    validationErrors: [],
   });
 };
 
@@ -40,13 +45,26 @@ exports.postLogin = (req, res, next) => {
       path: '/login',
       docTitle: 'login',
       errorMessage: errors.array()[0].msg,
+      oldInput: {
+        email: email,
+        password: password,
+      },
+      validationErrors: errors.array(),
     });
   }
   User.findOne({ email: email })
     .then((user) => {
       if (!user) {
-        req.flash('error', 'Invalid email or password');
-        return res.redirect('/login');
+        return res.status(422).render('auth/login', {
+          path: '/login',
+          docTitle: 'login',
+          errorMessage: 'Invalid email or password',
+          oldInput: {
+            email: email,
+            password: password,
+          },
+          validationErrors: [],
+        });
       }
       bcrypt
         .compare(password, user.password) // compares the pwd entered and stored in request with hashed pwd stored in db, using bcrypt algorithm to verify
@@ -60,8 +78,16 @@ exports.postLogin = (req, res, next) => {
               res.redirect('/');
             });
           }
-          req.flash('error', 'Invalid email or password');
-          res.redirect('/login');
+          return res.status(422).render('auth/login', {
+            path: '/login',
+            docTitle: 'login',
+            errorMessage: 'Invalid email or password',
+            oldInput: {
+              email: email,
+              password: password,
+            },
+            validationErrors: [],
+          });
         })
         .catch((err) => {
           console.log(err);
@@ -121,13 +147,13 @@ exports.postSignup = (req, res, next) => {
     })
     .then((result) => {
       res.redirect('/login');
-      return transporter.sendMail({
-        to: email,
-        from: 'shop@node-complete.com',
-        subject: 'You have signed up!',
-        html:
-          '<h1>Hello and welcome to node shop. You have successfully signed up to our service. </h1>',
-      });
+      // return transporter.sendMail({
+      //   to: email,
+      //   from: 'shop@node-complete.com',
+      //   subject: 'You have signed up!',
+      //   html:
+      //     '<h1>Hello and welcome to node shop. You have successfully signed up to our service. </h1>',
+      // });
     })
     .catch((err) => console.log(err));
 };
@@ -227,7 +253,7 @@ exports.postNewPassword = (req, res, next) => {
     })
     .then((hashedPassword) => {
       resetUser.password = hashedPassword;
-      resetUser.resetToken = null;
+      resetUser.resetToken = undefined;
       resetUser.resetTokenExpiration = undefined;
       return resetUser.save();
     })

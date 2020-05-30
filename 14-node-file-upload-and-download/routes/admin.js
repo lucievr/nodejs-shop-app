@@ -35,6 +35,7 @@ router.post(
   adminController.postEditProduct
 );
 
-router.post('/delete-product', isAuth, adminController.postDeleteProduct);
+// delete requests not allowed to have a request body, using request url params instead
+router.delete('/product/:productId', isAuth, adminController.deleteProduct);
 
 module.exports = router;

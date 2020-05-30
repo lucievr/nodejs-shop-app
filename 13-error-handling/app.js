@@ -46,29 +46,51 @@ app.use(csrfProtection); // must be used after we initialise the session, csurf 
 app.use(flash()); // also after session initialised
 
 app.use((req, res, next) => {
-  if (!req.session.user) {
-    return next();
-  }
-  User.findById(req.session.user._id)
-    .then((user) => {
-      req.user = user;
-      next();
-    })
-    .catch((err) => console.log(err));
-});
-
-app.use((req, res, next) => {
   // for every request that is executed, these 2 fields will be set for the views that are rendered
   res.locals.isAuthenticated = req.session.isLoggedIn;
   res.locals.csrfToken = req.csrfToken(); // method provided by the csrf middleware
   next();
 });
 
+app.use((req, res, next) => {
+  // throw new Error('Sync Dummy');
+  if (!req.session.user) {
+    return next();
+  }
+  User.findById(req.session.user._id)
+    .then((user) => {
+      // safer to handle this usecase, in case of issues with db for example
+      if (!user) {
+        return next();
+      }
+      req.user = user;
+      next();
+    })
+    .catch((err) => {
+      // in async code, inside a promise/then/catch block, must use next instead of throwing an error
+      next(new Error(err));
+    });
+});
+
 app.use('/admin', adminRoutes);
 app.use(shopRoutes);
 app.use(authRoutes);
 
+app.get('/500', errorController.get500);
 app.use(errorController.get404);
+
+// special middleware - error handling middleware with 4 arguments
+app.use((error, req, res, next) => {
+  // res.redirect('/500');
+
+  res
+  .status(500)
+  .render('500', {
+    docTitle: 'Error occurred!',
+    path: '/500',
+    isAuthenticated: req.session.isLoggedIn,
+  });
+});
 
 mongoose
   .connect(MONGODB_URI)

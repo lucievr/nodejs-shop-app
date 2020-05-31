@@ -111,6 +111,7 @@ app.use(errorController.get404);
 // special middleware - error handling middleware with 4 arguments
 app.use((error, req, res, next) => {
   // res.redirect('/500');
+  console.log(error)
   res.status(500).render('500', {
     docTitle: 'Error occurred!',
     path: '/500',

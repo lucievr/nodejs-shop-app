@@ -144,7 +144,7 @@ exports.postCartDeleteProduct = (req, res, next) => {
 
 exports.getCheckout = (req, res, next) => {
   let products;
-  let total;
+  let total = 0;
   req.user
     .populate('cart.items.productId')
     .execPopulate()
@@ -159,12 +159,13 @@ exports.getCheckout = (req, res, next) => {
           return {
             name: prod.productId.title,
             description: prod.productId.description,
-            amount: prod.productId.price * 100, // in cents
+            amount: Math.round(prod.productId.price.toFixed(2)*100), // in cents and rounded to an integer
             currency: 'usd',
             quantity: prod.quantity,
           };
         }),
-        success_url: req.protocol + '://' + req.get('host') + '/checkout/success', // http://localhost:3000/checkout/success
+        success_url:
+          req.protocol + '://' + req.get('host') + '/checkout/success', // http://localhost:3000/checkout/success
         cancel_url: req.protocol + '://' + req.get('host') + '/checkout/cancel',
       });
     })
@@ -173,7 +174,7 @@ exports.getCheckout = (req, res, next) => {
         path: '/checkout',
         docTitle: 'Checkout',
         products: products,
-        totalSum: total,
+        totalSum: total.toFixed(2),
         sessionId: session.id,
       });
     })

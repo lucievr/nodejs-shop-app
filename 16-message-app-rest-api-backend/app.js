@@ -2,14 +2,40 @@ const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const multer = require('multer');
 
 const feedRoutes = require('./routes/feed');
 
-const MONGODB_URI = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0-vo9l7.mongodb.net/messages`;
+const MONGODB_URI = `mongodb://localhost:27017/messages`;
 
 const app = express();
 
+const fileStorage = multer.diskStorage({
+  destination: function (req, file, callback) {
+    callback(null, 'images'); // null for no error
+  },
+  filename: function (req, file, callback) {
+    callback(
+      null,
+      new Date().toISOString().replace(/:/g, '-') + file.originalname
+    );
+  },
+});
+
+const fileFilter = (req, file, callback) => {
+  if (
+    file.mimetype === 'image/png' ||
+    file.mimetype === 'image/jpg' ||
+    file.mimetype === 'image/jpeg'
+  ) {
+    callback(null, true); // accept file
+  } else {
+    callback(null, false); // do not accept
+  }
+};
+
 app.use(bodyParser.json()); // application/json, parsing json from incoming requests, stored in req.body
+app.use(multer({ storage: fileStorage, fileFilter: fileFilter }).single('image'));
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
 // to overwrite default CORS setting
@@ -33,7 +59,7 @@ app.use((error, req, res, next) => {
 });
 
 mongoose
-  .connect(MONGODB_URI)
+  .connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then((result) => {
     app.listen(8080);
   })

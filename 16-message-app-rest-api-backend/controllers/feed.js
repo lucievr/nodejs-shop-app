@@ -20,12 +20,19 @@ exports.createPost = (req, res, next) => {
     error.statusCode = 422;
     throw error;
   }
+  if (!req.file) {
+    const error = new Error('No image provided');
+    error.statusCode = 422;
+    throw error;
+  }
+  const imageUrl = req.file.path.replace("\\" ,"/"); // for Windows
   const title = req.body.title;
   const content = req.body.content;
+
   const post = new Post({
     title: title,
     content: content,
-    imageUrl: 'images/fleabag.jpg',
+    imageUrl: imageUrl,
     creator: { name: 'Lucie' },
   });
   post
@@ -58,4 +65,8 @@ exports.getPost = (req, res, next) => {
       res.status(200).json({ message: 'Post fetched', post: post });
     })
     .catch((err) => next(err));
+};
+
+exports.updatePost = (req, res, next) => {
+  imageUrl = req.file.path.replace("\\","/");
 };

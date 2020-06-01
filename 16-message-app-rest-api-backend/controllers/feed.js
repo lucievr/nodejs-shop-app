@@ -3,6 +3,7 @@ const fs = require('fs');
 const { validationResult } = require('express-validator');
 
 const Post = require('../models/post');
+const User = require('../models/user');
 
 exports.getPosts = (req, res, next) => {
   const currentPage = req.query.page || 1;
@@ -41,20 +42,30 @@ exports.createPost = (req, res, next) => {
   const imageUrl = req.file.path.replace('\\', '/'); // for Windows
   const title = req.body.title;
   const content = req.body.content;
+  let creator;
 
   const post = new Post({
     title: title,
     content: content,
     imageUrl: imageUrl,
-    creator: { name: 'Lucie' },
+    creator: req.userId,
   });
   post
     .save()
-    .then((postData) => {
+    .then((result) => {
+      return User.findById(req.userId); // userId saved in req via isAuth
+    })
+    .then((user) => {
+      creator = user;
+      user.posts.push(post);
+      return user.save();
+    })
+    .then((result) => {
+      // 201 success and created a resource
       res.status(201).json({
-        // success and created a resource
         message: 'New post successfully created.',
-        post: postData,
+        post: post,
+        creator: { _id: creator._id, name: creator.name },
       });
     })
     .catch((err) => {
@@ -106,6 +117,12 @@ exports.updatePost = (req, res, next) => {
         error.statusCode = 404;
         throw error;
       }
+      if (post.creator.toString() !== req.userId) {
+        // loggedin user doesn't match to creator of the post
+        const error = new Error('Not authorized');
+        error.statusCode = 403;
+        throw error;
+      }
       if (imageUrl !== post.imageUrl) {
         // different from imageUrl saved in the db
         clearImage(post.imageUrl);
@@ -130,12 +147,22 @@ exports.deletePost = (req, res, next) => {
         error.statusCode = 404;
         throw error;
       }
-      // check logged in user
+      if (post.creator.toString() !== req.userId) {
+        const error = new Error('Not authorized');
+        error.statusCode = 403;
+        throw error;
+      }
       clearImage(post.imageUrl);
-      return Post.findByIdAndRemove(postId);
+      return Post.findByIdAndRemove(postId); // remove the post from posts collection
     })
     .then((result) => {
-      console.log(result);
+      return User.findById(req.userId);
+    })
+    .then((user) => {
+      user.posts.pull(postId); // remove the post from the users collection, needed since there is a Post-User relation
+      return user.save();
+    })
+    .then((result) => {
       res.status(200).json({ message: 'Post deleted' });
     })
     .catch((err) => next(err));

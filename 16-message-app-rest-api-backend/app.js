@@ -35,7 +35,9 @@ const fileFilter = (req, file, callback) => {
 };
 
 app.use(bodyParser.json()); // application/json, parsing json from incoming requests, stored in req.body
-app.use(multer({ storage: fileStorage, fileFilter: fileFilter }).single('image'));
+app.use(
+  multer({ storage: fileStorage, fileFilter: fileFilter }).single('image')
+);
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
 // to overwrite default CORS setting

@@ -7,7 +7,9 @@ const multer = require('multer');
 const feedRoutes = require('./routes/feed');
 const authRoutes = require('./routes/auth');
 
-const MONGODB_URI = `mongodb://localhost:27017/messages`;
+require('dotenv').config()
+
+const MONGODB_URI = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0-vo9l7.mongodb.net/messages`;
 
 const app = express();
 

@@ -52,7 +52,8 @@ exports.createPost = async (req, res, next) => {
   });
   try {
     await post.save();
-    const user = User.findById(req.userId); // userId saved in req via isAuth
+    const user = await User.findById(req.userId); // userId saved in req via isAuth
+    console.log(user, 'user');
     user.posts.push(post);
     await user.save();
 

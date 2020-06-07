@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
@@ -7,7 +8,7 @@ const graphqlHttp = require('express-graphql');
 
 const graphqlSchema = require('./graphql/schema');
 const graphqlResolver = require('./graphql/resolvers');
-const auth = require('./middleware/auth')
+const auth = require('./middleware/auth');
 
 require('dotenv').config();
 
@@ -53,10 +54,27 @@ app.use((req, res, next) => {
     'GET, POST, PUT, PATCH, DELETE'
   ); // allow these http methods
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // allow to set content type and auth
-  if (req.method === 'OPTIONS') { // OPTIONS method not allowed for graphql endpoints
+  if (req.method === 'OPTIONS') {
+    // OPTIONS method not allowed for graphql endpoints
     return res.sendStatus(200);
   }
   next();
+});
+
+  // REST API endpoint for uploading images, graphql only handles json data
+app.put('/post-image', (req, res, next) => {
+  if (!req.isAuth) {
+    throw new Error('Not authenticated!');
+  }
+  if (!req.file) {
+    return res.status(200).json({ message: 'No file provided!' });
+  }
+  if (req.body.oldPath) {
+    clearImage(req.body.oldPath);
+  }
+  return res
+    .status(201)
+    .json({ message: 'File stored', filePath: req.file.path });
 });
 
 app.use(auth);
@@ -93,3 +111,8 @@ mongoose
     app.listen(8080);
   })
   .catch((err) => console.log(err));
+
+const clearImage = (filePath) => {
+  filePath = path.join(__dirname, '..', filePath); // .. go up one level
+  fs.unlink(filePath, (err) => console.log(err));
+};

@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
@@ -8,6 +9,9 @@ const MongoDbStore = require('connect-mongodb-session')(session);
 const csrf = require('csurf');
 const flash = require('connect-flash');
 const multer = require('multer'); // middleware for handling multipart/form-data
+const helmet = require('helmet');
+const compression = require('compression');
+const morgan = require('morgan');
 
 require('dotenv').config();
 
@@ -18,7 +22,7 @@ const adminRoutes = require('./routes/admin');
 const shopRoutes = require('./routes/shop');
 const authRoutes = require('./routes/auth');
 
-const MONGODB_URI = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0-vo9l7.mongodb.net/shop`;
+const MONGODB_URI = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0-vo9l7.mongodb.net/${process.env.DB_NAME}`;
 
 const app = express();
 const store = new MongoDbStore({
@@ -33,7 +37,10 @@ const fileStorage = multer.diskStorage({
     callback(null, 'images');
   },
   filename: (req, file, callback) => {
-    callback(null, new Date().toISOString().replace(/:/g, '-') + '-' + file.originalname);
+    callback(
+      null,
+      new Date().toISOString().replace(/:/g, '-') + '-' + file.originalname
+    );
   },
 });
 
@@ -51,6 +58,15 @@ const fileFilter = (req, file, callback) => {
 
 app.set('view engine', 'ejs');
 app.set('views', 'views');
+
+const accessLogStream = fs.createWriteStream(
+  path.join(__dirname, 'access.log'),
+  { flags: 'a' } // a for append, not rewriting
+);
+
+app.use(helmet()); // to set secure response headers
+app.use(compression()); // to compress assets
+app.use(morgan('combined', { stream: accessLogStream })); // to log requests, may be done by some hosting providers
 
 app.use(bodyParser.urlencoded({ extended: false })); // url encoded only parses text data not files, for example
 // to handle input of type file with name image in our views and store in local file system
@@ -111,7 +127,7 @@ app.use(errorController.get404);
 // special middleware - error handling middleware with 4 arguments
 app.use((error, req, res, next) => {
   // res.redirect('/500');
-  console.log(error)
+  console.log(error);
   res.status(500).render('500', {
     docTitle: 'Error occurred!',
     path: '/500',
@@ -120,8 +136,8 @@ app.use((error, req, res, next) => {
 });
 
 mongoose
-  .connect(MONGODB_URI)
+  .connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then((result) => {
-    app.listen(3000);
+    app.listen(process.env.PORT || 3000);
   })
   .catch((err) => console.log(err));

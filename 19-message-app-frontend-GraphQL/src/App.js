@@ -124,7 +124,7 @@ class App extends Component {
     const graphqlQuery = {
       query: `
         mutation CreateNewUser($email: String!, $name: String!, $password: String!) {
-          createUser(userInput: {email: $email, name: $name, password: $password) {
+          createUser(userInput: {email: $email, name: $name, password: $password}) {
             _id
             email
           }

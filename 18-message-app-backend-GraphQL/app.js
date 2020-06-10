@@ -51,7 +51,7 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*'); // allow specific origins to access our data, * wildcard for all origins
   res.setHeader(
     'Access-Control-Allow-Methods',
-    'GET, POST, PUT, PATCH, DELETE'
+    'GET, POST, PUT, PATCH, DELETE', 'OPTIONS'
   ); // allow these http methods
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // allow to set content type and auth
   if (req.method === 'OPTIONS') {
@@ -60,6 +60,8 @@ app.use((req, res, next) => {
   }
   next();
 });
+
+app.use(auth);
 
   // REST API endpoint for uploading images, graphql only handles json data
 app.put('/post-image', (req, res, next) => {
@@ -76,8 +78,6 @@ app.put('/post-image', (req, res, next) => {
     .status(201)
     .json({ message: 'File stored', filePath: req.file.path });
 });
-
-app.use(auth);
 
 app.use(
   '/graphql',

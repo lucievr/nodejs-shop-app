@@ -55,20 +55,14 @@ exports.createPost = async (req, res, next) => {
     const user = await User.findById(req.userId); // userId saved in req via isAuth
     console.log(user, 'user');
     user.posts.push(post);
-    await user.save();
+    const savedUser = await user.save();
 
-    // sending this to all clients through the communication channel
-    io.getIO().emit('posts', {
-      action: 'create',
-      post: { ...post._doc, creator: { _id: req.userId, name: user.name } },
-    });
-
-    // 201 success and created a resource
     res.status(201).json({
       message: 'New post successfully created.',
       post: post,
       creator: { _id: user._id, name: user.name },
     });
+    return savedUser;
   } catch (err) {
     if (!err.statusCode) {
       // if no status code set yet, set it to 500
